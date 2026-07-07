@@ -15,7 +15,7 @@ class helper_plugin_recommend_mail extends Plugin
      *
      * @return void
      */
-    public function sendMail($recipient, $sender, $replacements = [])
+    public function sendMail($recipient, $sender, $replacements = [], $pagecontent = '', $replacements_html = [], $pagecontent_html = NULL)
     {
         global $INPUT;
 
@@ -24,13 +24,28 @@ class helper_plugin_recommend_mail extends Plugin
         /* Limit to two empty lines. */
         $mailtext = preg_replace('/\n{4,}/', "\n\n\n", $mailtext);
 
+        $mailtext_html = '<pre>'.$mailtext.'</pre><hr>'.$pagecontent_html;
+
+        /* reduce linebreaks in pagecontent*/
+        $pagecontent = preg_replace('/\n{2}/', "\n", $pagecontent);
+
+        $mailtext = $mailtext.$pagecontent;
+
         $mailer = new Mailer();
         $mailer->bcc($recipient);
         $mailer->from($sender);
 
         $subject = $INPUT->str('subject');
+        foreach ($replacements as $key => $substitution) {
+           $subject = str_replace('@' . strtoupper($key) . '@', $substitution, $subject);
+        }
+        
         $mailer->subject($subject);
-        $mailer->setBody($mailtext, $replacements);
+		if ( is_null($pagecontent_html) ) {
+            $mailer->setBody($mailtext, $replacements);
+		} else {
+            $mailer->setBody($mailtext, $replacements, $replacements_html, $mailtext_html);
+		}
         $mailer->send();
     }
 

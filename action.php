@@ -243,7 +243,26 @@ class action_plugin_recommend extends ActionPlugin
             'AUTHOR' => $s_name
         ];
 
-        $mailHelper->sendMail($recipients, $sender, $replacements);
+        $pagecontent_html = p_wiki_xhtml($id, '', false);
+        $pagecontent = strip_tags($pagecontent_html);
+
+        if ( $conf['htmlmail'] ) {
+            $replacements_html = [
+                'PAGE' => noNS($id),
+                'SITE' => $conf['title'],
+                'URL'  => '<a href="'.wl($id, '', true).'" title="'.noNS($id).'">'.noNS($id).'</a>',
+                'COMMENT' => $comment,
+                'AUTHOR' => $s_name
+            ];
+            // Strip out html comments
+            $pagecontent_html = preg_replace('/<!--\s*EDIT\{.*?\}\s*-->/s', '', $pagecontent_html);
+            $pagecontent_html = preg_replace('/<!--.*?-->/s', '', $pagecontent_html);
+        } else {
+            $replacements_html = [];
+            $pagecontent_html = NULL;
+        }
+        
+        $mailHelper->sendMail($recipients, $sender, $replacements, $pagecontent, $replacements_html, $pagecontent_html);
 
         /** @var helper_plugin_recommend_log $log */
         $log = new helper_plugin_recommend_log(date('Y-m'));
